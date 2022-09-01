@@ -1,0 +1,22 @@
+project:
+  type: website
+  output-dir: _docs
+  preview:
+    port: 3000
+    browser: false
+  render:
+    - Processing_flow.ipynb
+
+website:
+  title: "Gapless S2 index mosaics"
+  navbar:
+    background: primary
+    left:
+      - href: Processing_flow.ipynb
+        text: Processing flow
+
+format:
+  html:
+    theme: minty
+    css: styles.css
+    toc: true

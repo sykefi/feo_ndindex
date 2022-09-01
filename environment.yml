@@ -1,0 +1,10 @@
+name: feo-index
+channels:
+  - conda-forge
+dependencies:
+  - python<3.10
+  - fastai::fastcore
+  - conda-forge::rasterio
+  - conda-forge::owslib
+  - conda-forge::geopandas
+  - conda-forge::notebook

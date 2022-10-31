@@ -124,40 +124,52 @@ def process_patch(outpath:Path, years:list, files:list, ndindex:str, x:int, y:in
     autumn_files = sorted([t for t in files if 
                            any(mon in str(t) for mon in ('1015', '1031'))])
 
-    vals = []
+    spring_vals = []
     for f in spring_files:
         with rio.open(f) as src:
             if ndindex != 'ndbi':
-                vals.append(src.read(window=window, masked=True)[0])
+                spring_vals.append(src.read(window=window, masked=True)[0])
             else:
                 with rio.open(str(f).replace('ndbi', 'meta').replace('NDBI', 'META')) as meta:
                     meta_mask = meta.read(window=window, masked=True)[0]
                 tmp = src.read(window=window)[0]
                 tmp[meta_mask.mask] = 255
-                vals.append(np.ma.array(src.read(window=window)[0], mask=meta_mask.mask))
+                spring_vals.append(np.ma.array(src.read(window=window)[0], mask=meta_mask.mask))
                 prof['nodata'] = 255
 
-    vals = np.ma.array(vals)
-    vals = np.ma.median(vals, axis=0)
+    spring_vals = np.ma.array(spring_vals)
+    spring_base = np.ma.median(spring_vals, axis=0)
     with rio.open(base_datapath/f'base_spring_{x}_{y}.tif', 'w', **prof) as dest:
-        dest.write(vals, 1)
+        dest.write(spring_base, 1)
 
-    vals = []
+    autumn_vals = []
     for f in autumn_files:
         with rio.open(f) as src:
             if ndindex != 'ndbi':
-                vals.append(src.read(window=window, masked=True)[0])
+                autumn_vals.append(src.read(window=window, masked=True)[0])
             else:
                 with rio.open(str(f).replace('ndbi', 'meta').replace('NDBI', 'META')) as meta:
                     meta_mask = meta.read(window=window, masked=True)[0]
                 tmp = src.read(window=window)[0]
                 tmp[meta_mask.mask] = 255
-                vals.append(np.ma.array(src.read(window=window)[0], mask=meta_mask.mask))
+                autumn_vals.append(np.ma.array(src.read(window=window)[0], mask=meta_mask.mask))
 
-    vals = np.ma.array(vals)
-    vals = np.ma.median(vals, axis=0)
+    autumn_vals = np.ma.array(autumn_vals)
+    autumn_base = np.ma.median(autumn_vals, axis=0)
     with rio.open(base_datapath/f'base_autumn_{x}_{y}.tif', 'w', **prof) as dest:
-        dest.write(vals, 1)
+        dest.write(autumn_base, 1)
+
+    vals = np.ma.concatenate([spring_vals, autumn_vals], 0)
+    base = np.ma.median(vals, axis=0)
+    with rio.open(base_datapath/f'base_all_{x}_{y}.tif', 'w', **prof) as dest:
+        dest.write(base, 1)
+
+    spring_vals = None
+    autumn_vals = None
+    vals = None
+    autumn_base = None
+    spring_base = None
+    base = None
 
     logging.info(f'Filling nodata values for {x}_{y}')
 
@@ -180,13 +192,15 @@ def process_patch(outpath:Path, years:list, files:list, ndindex:str, x:int, y:in
 
     logging.info(f'Creating statistics rasters {x}_{y}')
     statspath = ix_path/f'stats_{x}_{y}'
-    make_stats(filled_path, statspath)
+    make_stats(filled_path, statspath, base_datapath/f'base_all_{x}_{y}.tif')
 
     if not bbox.within(borders.iloc[0].geometry):
         logging.info(f'Clipping rasters {x}_{y}')
-        # Clip rasters within Finnish borders
         clip_rasters(filled_path, borders, fillyears)
         clip_rasters(statspath, borders, fillyears)
+        clip_raster(base_datapath/f'base_spring_{x}_{y}.tif')
+        clip_raster(base_datapath/f'base_autumn_{x}_{y}.tif')
+        clip_raster(base_datapath/f'base_all_{x}_{y}.tif')
     logging.info(f'Finished with raster {x}_{y}')
     return
 
@@ -230,10 +244,13 @@ def main(ndindex:Param("""Normalized difference index to use,
 
     spring_bases = [base_datapath/f for f in os.listdir(base_datapath) if 'spring' in f]
     autumn_bases = [base_datapath/f for f in os.listdir(base_datapath) if 'autumn' in f]
-    
-    with multiprocessing.Pool(2) as pool:
+    all_bases = [base_datapath/f for f in os.listdir(base_datapath) if 'all' in f]
+
+
+    with multiprocessing.Pool(3) as pool:
         pool.starmap(rio_merge_files, [(spring_bases, ix_path/'base_spring.tif'),
-                                       (autumn_bases, ix_path/'base_autumn.tif')])
+                                       (autumn_bases, ix_path/'base_autumn.tif'),
+                                       (all_bases, ix_path/'base_all.tif')])
     
     rmtree(base_datapath)
 
@@ -262,8 +279,7 @@ def main(ndindex:Param("""Normalized difference index to use,
     for f in stats_folders: rmtree(ix_path/f)
 
     logging.info('Building overviews')
-    # Build overviews
-    base_fns = [ix_path/'base_spring.tif', ix_path/'base_autumn.tif'] 
+    base_fns = [ix_path/'base_spring.tif', ix_path/'base_autumn.tif', ix_path/'base_all.tif'] 
     stats_fns = [final_stats/year/f for year in os.listdir(final_stats) for f in os.listdir(final_stats/year)]
     interp_fns = [final_interp/year/f for year in os.listdir(final_interp) for f in os.listdir(final_interp/year)]
 

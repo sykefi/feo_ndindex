@@ -12,7 +12,7 @@ Functions that fill gaps in ndindex mosaics and collate stats from them
 """
 
 __all__ = ['fill_prev_years', 'fill_nodata', 'fill_base', 
-           'fill_august', 'make_stats', 'clip_rasters']
+           'fill_august', 'make_stats', 'clip_rasters', 'clip_raster']
 
 def fill_prev_years(datapath:Path, outpath:Path, fillyears:list) -> None:
     """Fill nodata values for as single month with maximum value of the same month
@@ -96,7 +96,10 @@ def fill_august(datapath:Path) -> None:
             dest.write_band(1, aug.data)
     return
 
-def make_stats(datapath:Path, outpath:Path) -> None:
+def make_amplitude(mosaics:np.ndarray, basepath:Path) -> np.ndarray:
+    pass
+
+def make_stats(datapath:Path, outpath:Path, base_mos:Path) -> None:
     """
     Generate yearly stats for the mosaic. The generated stats are
 
@@ -105,7 +108,7 @@ def make_stats(datapath:Path, outpath:Path) -> None:
     * Yearly min, datatype uint8
     * Yearly max, datatype uint8
     * Yearly sum, datatype uint16
-    * Amplitude (pixelwise max - pixelwise median), datatype uint8
+    * Amplitude (pixelwise max - base), datatype uint8
 
     """
     os.makedirs(outpath, exist_ok=True)
@@ -126,8 +129,12 @@ def make_stats(datapath:Path, outpath:Path) -> None:
             dest.write(mosaics.min(axis=0),1)
         with rio.open(outpath/str(f)/'max.tif', 'w', **prof) as dest:
             dest.write(mosaics.max(axis=0),1)
+        prof.update({'dtype':'int16',
+                     'nodata': -999})
         with rio.open(outpath/str(f)/'amp.tif', 'w', **prof) as dest:
-            dest.write(mosaics.max(axis=0)-np.ma.median(mosaics, axis=0), 1)
+            with rio.open(base_mos) as src:
+                basevals = src.read()[0]
+            dest.write(mosaics.max(axis=0).astype(np.int16)-basevals.astype(np.int16), 1)
         prof.update({'dtype':'uint16',
                      'nodata': 65535})
         mosaics = mosaics.astype(np.int16)
@@ -135,18 +142,22 @@ def make_stats(datapath:Path, outpath:Path) -> None:
             dest.write(mosaics.sum(axis=0), 1)
     return 
 
+def clip_raster(datapath:Path, borders:gpd.GeoDataFrame) -> None:
+    with rio.open(datapath) as src:
+        out_im, out_transform = rio_mask.mask(src, borders.geometry, crop=True)
+        prof = src.profile
+    prof.update(compress='lzw',
+                predictor=2,
+                BIGTIFF='YES',
+                height=out_im.shape[1],
+                width=out_im.shape[2],
+                transform=out_transform)
+    with rio.open(datapath, 'w', **prof) as dest:
+        dest.write(out_im)
+    return
+
 def clip_rasters(datapath:Path, borders:gpd.GeoDataFrame, fillyears:list) -> None:
     for year in fillyears:
         for f in os.listdir(datapath/str(year)):
-            with rio.open(datapath/str(year)/f) as src:
-                out_image, out_transform = rio_mask.mask(src, borders.geometry, crop=True)
-                prof = src.profile
-            prof.update(compress='lzw',
-                        predictor=2,
-                        BIGTIFF='YES',
-                        height=out_image.shape[1],
-                        width=out_image.shape[2],
-                        transform=out_transform)
-            with rio.open(datapath/str(year)/f, 'w', **prof) as dest:
-                dest.write(out_image)
+            clip_raster(datapath/str(year)/f)
     return

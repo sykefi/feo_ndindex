@@ -20,12 +20,6 @@ jobs:
       - name: Generate README.md
         run: quarto render README.ipynb
 
-      - name: switch from HTTPS to SSH
-        run: git remote set-url origin ${{ secrets.ssh }}
-
-      - name: check for changes
-        run: git status
-
       - name: stage README.md
         run: git add README.md
       

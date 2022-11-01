@@ -18,19 +18,17 @@ jobs:
           tinytex: false
 
       - name: Generate README.md
-        run: quarto render README.ipynb
-
-      - name: stage README.md
-        run: git add README.md
-      
-      - name: commit README.md
-        run: git commit -m 'Auto-updating README.md'
-
-      - name: fetch from main
-        run: git fetch origin main
+        run: |
+          quarto render README.ipynb
+          git config --local user.name ${{ github.actor }}
+          git add README.md
+          git commit -m 'Auto-updating README.md'
 
       - name: push to main
-        run: git push origin HEAD:main
+        uses: ad-m/github-push.action@main
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          force: true
 
       - name: create docs
         run: quarto render --output-dir _docs

@@ -1,0 +1,100 @@
+[
+  {
+    "objectID": "Processing_flow.html",
+    "href": "Processing_flow.html",
+    "title": "Gapless S2 index mosaics",
+    "section": "",
+    "text": "%load_ext autoreload\n%autoreload 2\n\nimport os\nimport numpy as np\nimport rasterio as rio\nimport owslib.wcs as wcs\n\nfrom pathlib import Path\nfrom src.functions import *\nimport matplotlib.pyplot as plt\nfrom shutil import rmtree\nfrom rasterio.enums import Resampling\nThis example shows how to process NDVI, get yearly cloud-free index mosaics and derive some stats from it. Functions needed for processing are defined in src.functions."
+  },
+  {
+    "objectID": "Processing_flow.html#getting-example-data-from-wcs",
+    "href": "Processing_flow.html#getting-example-data-from-wcs",
+    "title": "Gapless S2 index mosaics",
+    "section": "Getting example data from WCS",
+    "text": "Getting example data from WCS\nFirst step is to get the raw data, which is available and described here.\n\nndindex = 'ndvi'\noutpath = 'example_data'\nix_path = Path(f'{outpath}/{ndindex}')\nos.makedirs(ix_path, exist_ok=True)\ndatapath = ix_path/'raw'\n\nGeoreferenced data can be downloaded from WCS, using owslib.wcs.\n\nwcs_url = 'https://data.nsdc.fmi.fi/geoserver/wcs'\nlayer = f'PTA:s2m_{ndindex}'\nyears = [2016,2017,2018,2019,2020,2021,2022]\nfor y in years: os.makedirs(datapath/str(y), exist_ok=True)\n\nw = wcs.WebCoverageService(wcs_url, version='1.0.0')\nc = w[layer]\nt = sorted(c.timepositions)\nt = [ts for ts in t if '15' not in ts]\n\nThe example area is between Kuivaniemi and Ranua, southern Lapland.\n\nmin_x = 457325\nmin_y = 7702545\nsize_x = 3000\nsize_y = 3000\nbounds = (min_x, min_y, min_x+10*size_x, min_y+10*size_y)\n\nt contains all timepositions that cover a full month. Get the data and save it on the disk.\n\nfor ts in t:\n    outfn = f'{ts.split(\"T\")[0][:-2].replace(\"-\",\"\")}.tif'\n    img = w.getCoverage(layer,\n                crs='EPSG:3067',\n                bbox=bounds, \n                WIDTH=size_x,\n                HEIGHT=size_y,\n                format='GeoTIFF',\n                time=[ts])\n    out = open(datapath/ts[:4]/outfn, 'wb')\n    out.write(img.read())\n    out.close()\n\n\nfig, axs = plt.subplots(2,3, figsize=(12,8), dpi=150)\n\nfor a in axs.flatten(): a.axis('off')\n    \nfor a, year in zip(axs.flatten(), years[:-1]):\n    with rio.open(datapath/str(year)/f'{year}06.tif') as src:\n        im = src.read(masked=True)[0]\n    i = a.imshow(im, cmap='RdYlGn', vmin=1, vmax=200)\n    a.set_title(f'June {year}')\nfig.colorbar(i, ax=axs.ravel().tolist())\nplt.show()"
+  },
+  {
+    "objectID": "Processing_flow.html#making-base-mosaics-spring-and-autumn-and-all-non-growth-seasons",
+    "href": "Processing_flow.html#making-base-mosaics-spring-and-autumn-and-all-non-growth-seasons",
+    "title": "Gapless S2 index mosaics",
+    "section": "Making base mosaics spring and autumn, and all non-growth seasons",
+    "text": "Making base mosaics spring and autumn, and all non-growth seasons\nSeasonal base mosaics are used to fill gaps for April, May and October, as they are usually the most cloudy months. Base mosaics are constructed from the median values of April, May and October during the full observation period.\nFirst specify the timesteps for spring and autumn. Spring is April and May, autumn is mid-September to October.\n\nspring_tsteps = sorted([t for t in c.timepositions if \n                        any(mon in t for mon in ('04-30', '05-15', '05-31'))])\n\nautumn_tsteps = sorted([t for t in c.timepositions if \n                        any(mon in t for mon in ('10-15', '10-31'))])\n\nDownload the files from WCS.\n\nos.makedirs(ix_path/'basedata_spring', exist_ok=True)\n\nfor ts in spring_tsteps:\n    outfn = f'{ts.split(\"T\")[0].replace(\"-\",\"\")}.tif'\n    img = w.getCoverage(layer,\n                crs='EPSG:3067',\n                bbox=bounds, \n                WIDTH=size_x,\n                HEIGHT=size_y,\n               format='GeoTIFF',\n                time=[ts])\n    out = open(ix_path/'basedata_spring'/outfn, 'wb')\n    out.write(img.read())\n    out.close()\n\nRead files as masked arrays, get median and save as base_spring.tif.\n\nspring_files = os.listdir(ix_path/'basedata_spring')\nspring_vals = []\nfor f in spring_files:\n    with rio.open(ix_path/'basedata_spring'/f) as src:\n        spring_vals.append(src.read(masked=True)[0])\n        prof = src.profile\n        \nspring_vals = np.ma.array(spring_vals)\nspring_base = np.ma.median(spring_vals, axis=0)\nwith rio.open(ix_path/'base_spring.tif', 'w', **prof) as dest:\n    dest.write(spring_base,1)\n\nRemove the files not needed anymore.\n\nrmtree(ix_path/'basedata_spring')\n\nDo the same for autumn.\n\nos.makedirs(ix_path/'basedata_autumn', exist_ok=True)\n\nfor ts in autumn_tsteps:\n    outfn = f'{ts.split(\"T\")[0][:-2].replace(\"-\",\"\")}.tif'\n    img = w.getCoverage(layer,\n                crs='EPSG:3067',\n                bbox=bounds, \n                WIDTH=size_x,\n                HEIGHT=size_y,\n                format='GeoTIFF',\n                time=[ts])\n    out = open(ix_path/'basedata_autumn'/outfn, 'wb')\n    out.write(img.read())\n    out.close()\n\nautumn_files = os.listdir(ix_path/'basedata_autumn')\nautumn_vals = []\nfor f in autumn_files:\n    with rio.open(ix_path/'basedata_autumn'/f) as src:\n        autumn_vals.append(src.read(masked=True)[0])\n        prof = src.profile\n\nautumn_vals = np.ma.array(autumn_vals)\nautumn_base = np.ma.median(autumn_vals, axis=0)\n        \nwith rio.open(ix_path/'base_autumn.tif', 'w', **prof) as dest:\n    dest.write(autumn_base,1)\nrmtree(ix_path/'basedata_autumn')\n\nGenerate combined base mosaic, used to derive yearly amplitude.\n\nvals = np.ma.array(np.ma.concatenate([spring_vals, autumn_vals]))\nwith rio.open(ix_path/'base_all.tif', 'w', **prof) as dest:\n    dest.write(np.ma.median(vals, axis=0), 1)\n\n\nfig, axs = plt.subplots(1,3, figsize=(12,4), dpi=150)\nfor a in axs: a.axis('off')\n    \nwith rio.open(ix_path/'base_spring.tif') as src:\n    im = src.read(masked=True)[0]\naxs[0].imshow(im, vmin=0, vmax=200)\naxs[0].set_title('Spring base')\nwith rio.open(ix_path/'base_autumn.tif') as src:\n    im = src.read(masked=True)[0]\naxs[1].imshow(im, vmin=0, vmax=200)\naxs[1].set_title('Autumn base')\nwith rio.open(ix_path/'base_all.tif') as src:\n    im = src.read(masked=True)[0]\ni = axs[2].imshow(im, vmin=0, vmax=200)\naxs[2].set_title('Combined base')\nfig.colorbar(i, ax=axs.ravel().tolist())\nplt.show()\n\n\n\n\nNow that all data needed for further processing is ready, let’s start creating cloudless mosaics."
+  },
+  {
+    "objectID": "Processing_flow.html#fill-gaps-with-the-maximum-value-of-previous-two-years",
+    "href": "Processing_flow.html#fill-gaps-with-the-maximum-value-of-previous-two-years",
+    "title": "Gapless S2 index mosaics",
+    "section": "Fill gaps with the maximum value of previous two years",
+    "text": "Fill gaps with the maximum value of previous two years\nAs this step needs two previous years of data, the earliest year that can be processed from Sentinel-2 data is 2018. Also, because at the time of writing there is not enough data to process 2022, it is also omitted.\nFirst step is to use fill_prev_years to fill gaps with the maximum value of previous two years.\n\nfillyears = [2018,2019,2020,2021]\nfilled_path = ix_path/f'interp'\nos.makedirs(filled_path, exist_ok=True)\nfill_prev_years(datapath, filled_path, fillyears)\n\nAs an example, see how May images look at this point.\n\nfig, axs = plt.subplots(2,2, figsize=(10,8), dpi=150)\n\nfor a in axs.flatten(): a.axis('off')\n    \nfor a, year in zip(axs.flatten(), fillyears):\n    with rio.open(filled_path/str(year)/f'{year}06.tif') as src:\n        im = src.read(masked=True)[0]\n    i = a.imshow(im, cmap='RdYlGn', vmin=1, vmax=200)\n    a.set_title(f'May {year}')\nfig.colorbar(i, ax=axs.ravel().tolist())\nplt.show()"
+  },
+  {
+    "objectID": "Processing_flow.html#run-rasterio.fill.fillnodata",
+    "href": "Processing_flow.html#run-rasterio.fill.fillnodata",
+    "title": "Gapless S2 index mosaics",
+    "section": "Run rasterio.fill.fillnodata",
+    "text": "Run rasterio.fill.fillnodata\nRun rasterio.fill.fillnodata for the mosaics, in order to interpolate possible missing values. This usually doesn’t fill that much aside from small holes. fill_nodata runs rasterio.fill.fillnodata to all images.\n\nfill_nodata(filled_path)\n\n\nfig, axs = plt.subplots(2,2, figsize=(10,8), dpi=150)\n\nfor a in axs.flatten(): a.axis('off')\n    \nfor a, year in zip(axs.flatten(), fillyears):\n    with rio.open(filled_path/str(year)/f'{year}05.tif') as src:\n        im = src.read(masked=True)[0]\n    i = a.imshow(im, cmap='RdYlGn', vmin=1, vmax=200)\n    a.set_title(f'May {year}')\nfig.colorbar(i, ax=axs.ravel().tolist())\nplt.show()"
+  },
+  {
+    "objectID": "Processing_flow.html#fill-april-and-may-with-spring-mosaic",
+    "href": "Processing_flow.html#fill-april-and-may-with-spring-mosaic",
+    "title": "Gapless S2 index mosaics",
+    "section": "Fill April and May with spring mosaic",
+    "text": "Fill April and May with spring mosaic\nUse base mosaic to fill missing data with fill_base. Pictures below show the difference before and after filling.\n\nfig, axs = plt.subplots(2,4, figsize=(10,4), dpi=150)\n\nfor a in axs.flatten(): a.axis('off')\n    \nfor i, year in zip(range(4), fillyears):\n    with rio.open(filled_path/str(year)/f'{year}04.tif') as src:\n        im = src.read(masked=True)[0]\n    axim = axs[0,i].imshow(im, cmap='RdYlGn', vmin=1, vmax=200)\n    axs[0,i].set_title(f'April {year}')\n    \nfill_base(filled_path, ix_path/'base_spring.tif')\nfor i, year in zip(range(4), fillyears):\n    with rio.open(filled_path/str(year)/f'{year}04.tif') as src:\n        im = src.read(masked=True)[0]\n    axim = axs[1,i].imshow(im, cmap='RdYlGn', vmin=1, vmax=200)\n    axs[1,i].set_title('Base-filled')\nfig.colorbar(axim, ax=axs.ravel().tolist())\nplt.show()"
+  },
+  {
+    "objectID": "Processing_flow.html#fill-october-with-autumn-mosaic",
+    "href": "Processing_flow.html#fill-october-with-autumn-mosaic",
+    "title": "Gapless S2 index mosaics",
+    "section": "Fill October with autumn mosaic",
+    "text": "Fill October with autumn mosaic\nSame thing as before, but for October.\n\nfig, axs = plt.subplots(2,4, figsize=(10,4), dpi=150)\n\nfor a in axs.flatten(): a.axis('off')\n    \nfor i, year in zip(range(4), fillyears):\n    with rio.open(filled_path/str(year)/f'{year}10.tif') as src:\n        im = src.read(masked=True)[0]\n    axim = axs[0,i].imshow(im, cmap='RdYlGn', vmin=1, vmax=200)\n    axs[0,i].set_title(f'October {year}')\n    \nfill_base(filled_path, ix_path/'base_autumn.tif')\n\nfor i, year in zip(range(4), fillyears):\n    \n    with rio.open(filled_path/str(year)/f'{year}10.tif') as src:\n        im = src.read(masked=True)[0]\n    axim = axs[1,i].imshow(im, cmap='RdYlGn', vmin=1, vmax=200)\n    axs[1,i].set_title(f'Base-filled')\nfig.colorbar(axim, ax=axs.ravel().tolist())\nplt.show()"
+  },
+  {
+    "objectID": "Processing_flow.html#fill-august-with-mean-value-of-july-and-september",
+    "href": "Processing_flow.html#fill-august-with-mean-value-of-july-and-september",
+    "title": "Gapless S2 index mosaics",
+    "section": "Fill August with mean value of July and September",
+    "text": "Fill August with mean value of July and September\nThere are some areas where August has gaps, and they are filled with fill_august.\n\nfig, axs = plt.subplots(2,4, figsize=(10,4), dpi=150)\n\nfor a in axs.flatten(): a.axis('off')\n    \nfor i, year in zip(range(4), fillyears):\n    with rio.open(filled_path/str(year)/f'{year}08.tif') as src:\n        im = src.read(masked=True)[0]\n    axim = axs[0,i].imshow(im, cmap='RdYlGn', vmin=1, vmax=200)\n    axs[0,i].set_title(f'August {year}')\n    \nfill_august(filled_path)\n\nfor i, year in zip(range(4), fillyears):\n    \n    with rio.open(filled_path/str(year)/f'{year}08.tif') as src:\n        im = src.read(masked=True)[0]\n    axim = axs[1,i].imshow(im, cmap='RdYlGn', vmin=1, vmax=200)\n    axs[1,i].set_title(f'Adjacent-filled')\nfig.colorbar(axim, ax=axs.ravel().tolist())\nplt.show()"
+  },
+  {
+    "objectID": "Processing_flow.html#yearly-maximum",
+    "href": "Processing_flow.html#yearly-maximum",
+    "title": "Gapless S2 index mosaics",
+    "section": "Yearly maximum",
+    "text": "Yearly maximum\n\nfig, axs = plt.subplots(2,2, figsize=(10,8), dpi=150)\n\nfor a in axs.flatten(): a.axis('off')\n\nfor a, year in zip(axs.flatten(), fillyears):\n    with rio.open(statspath/str(year)/f'max.tif') as src:\n        im = src.read(masked=True)[0]\n    i = a.imshow(im, cmap='RdYlGn', vmin=1, vmax=200)\n    a.set_title(f'NDVI max {year}')\nfig.colorbar(i, ax=axs.ravel().tolist())\nplt.show()"
+  },
+  {
+    "objectID": "Processing_flow.html#yearly-minimum",
+    "href": "Processing_flow.html#yearly-minimum",
+    "title": "Gapless S2 index mosaics",
+    "section": "Yearly minimum",
+    "text": "Yearly minimum\n\nfig, axs = plt.subplots(2,2, figsize=(10,8), dpi=150)\n\nfor a in axs.flatten(): a.axis('off')\n\nfor a, year in zip(axs.flatten(), fillyears):\n    with rio.open(statspath/str(year)/f'min.tif') as src:\n        im = src.read(masked=True)[0]\n    i = a.imshow(im, cmap='RdYlGn', vmin=1, vmax=200)\n    a.set_title(f'NDVI min {year}')\nfig.colorbar(i, ax=axs.ravel().tolist())\nplt.show()"
+  },
+  {
+    "objectID": "Processing_flow.html#yearly-mean",
+    "href": "Processing_flow.html#yearly-mean",
+    "title": "Gapless S2 index mosaics",
+    "section": "Yearly mean",
+    "text": "Yearly mean\n\nfig, axs = plt.subplots(2,2, figsize=(10,8), dpi=150)\n\nfor a in axs.flatten(): a.axis('off')\n\nfor a, year in zip(axs.flatten(), fillyears):\n    with rio.open(statspath/str(year)/f'mean.tif') as src:\n        im = src.read(masked=True)[0]\n    i = a.imshow(im, cmap='RdYlGn', vmin=1, vmax=200)\n    a.set_title(f'NDVI mean {year}')\nfig.colorbar(i, ax=axs.ravel().tolist())\nplt.show()"
+  },
+  {
+    "objectID": "Processing_flow.html#yearly-median",
+    "href": "Processing_flow.html#yearly-median",
+    "title": "Gapless S2 index mosaics",
+    "section": "Yearly median",
+    "text": "Yearly median\n\nfig, axs = plt.subplots(2,2, figsize=(10,8), dpi=150)\n\nfor a in axs.flatten(): a.axis('off')\n\nfor a, year in zip(axs.flatten(), fillyears):\n    with rio.open(statspath/str(year)/f'median.tif') as src:\n        im = src.read(masked=True)[0]\n    i = a.imshow(im, cmap='RdYlGn', vmin=1, vmax=200)\n    a.set_title(f'NDVI median {year}')\nfig.colorbar(i, ax=axs.ravel().tolist())\nplt.show()"
+  },
+  {
+    "objectID": "Processing_flow.html#yearly-sum",
+    "href": "Processing_flow.html#yearly-sum",
+    "title": "Gapless S2 index mosaics",
+    "section": "Yearly sum",
+    "text": "Yearly sum\nSum can be used as a proxy for productivity for the areas, especially for fields etc.\n\nfig, axs = plt.subplots(2,2, figsize=(10,8), dpi=150)\n\nfor a in axs.flatten(): a.axis('off')\n\nfor a, year in zip(axs.flatten(), fillyears):\n    with rio.open(statspath/str(year)/f'sum.tif') as src:\n        im = src.read(masked=True)[0]\n    i = a.imshow(im, cmap='RdYlGn', vmin=1, vmax=1400)\n    a.set_title(f'NDVI sum {year}')\nfig.colorbar(i, ax=axs.ravel().tolist())\nplt.show()"
+  },
+  {
+    "objectID": "Processing_flow.html#yearly-amplitude",
+    "href": "Processing_flow.html#yearly-amplitude",
+    "title": "Gapless S2 index mosaics",
+    "section": "Yearly amplitude",
+    "text": "Yearly amplitude\nAmplitude is calculated as \\(amp = max - base\\_all\\), and used for phenology applications.\n\nfig, axs = plt.subplots(2,2, figsize=(10,8), dpi=150)\n\nfor a in axs.flatten(): a.axis('off')\n\nfor a, year in zip(axs.flatten(), fillyears):\n    with rio.open(statspath/str(year)/f'amp.tif') as src:\n        im = src.read(masked=False)[0]\n    i = a.imshow(im, cmap='RdYlGn', vmin=-10, vmax=100)\n    a.set_title(f'NDVI amplitude {year}')\nfig.colorbar(i, ax=axs.ravel().tolist())\nplt.show()\n\n\n\n\nComparison with previous amplitude formula \\(max - median\\).\n\nfig, axs = plt.subplots(2,2, figsize=(10,8), dpi=150)\n\nfor a in axs.flatten(): a.axis('off')\n\nfor a, year in zip(axs.flatten(), fillyears):\n    with rio.open(statspath/str(year)/'max.tif') as src:\n        maxvals = src.read(masked=True)[0]\n    with rio.open(statspath/str(year)/'median.tif') as src:\n        medians = src.read(masked=True)[0]\n    amp = (maxvals - medians)\n    i = a.imshow(amp, cmap='RdYlGn', vmin=-10, vmax=100)\n    a.set_title(f'NDVI amplitude {year}')\nfig.colorbar(i, ax=axs.ravel().tolist())\nplt.show()"
+  }
+]

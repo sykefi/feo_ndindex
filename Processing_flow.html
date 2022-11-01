@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.1.251">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Gapless S2 index mosaics – processing_flow</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Gapless S2 index mosaics</span>
+    </a>
+  </div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link active" href="./Processing_flow.html" aria-current="page">Processing flow</a>
+  </li>  
+</ul>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#getting-example-data-from-wcs" id="toc-getting-example-data-from-wcs" class="nav-link active" data-scroll-target="#getting-example-data-from-wcs">Getting example data from WCS</a></li>
+  <li><a href="#creating-gapless-mosaics" id="toc-creating-gapless-mosaics" class="nav-link" data-scroll-target="#creating-gapless-mosaics">Creating gapless mosaics</a>
+  <ul class="collapse">
+  <li><a href="#making-base-mosaics-spring-and-autumn-and-all-non-growth-seasons" id="toc-making-base-mosaics-spring-and-autumn-and-all-non-growth-seasons" class="nav-link" data-scroll-target="#making-base-mosaics-spring-and-autumn-and-all-non-growth-seasons">Making base mosaics spring and autumn, and all non-growth seasons</a></li>
+  <li><a href="#fill-gaps-with-the-maximum-value-of-previous-two-years" id="toc-fill-gaps-with-the-maximum-value-of-previous-two-years" class="nav-link" data-scroll-target="#fill-gaps-with-the-maximum-value-of-previous-two-years">Fill gaps with the maximum value of previous two years</a></li>
+  <li><a href="#run-rasterio.fill.fillnodata" id="toc-run-rasterio.fill.fillnodata" class="nav-link" data-scroll-target="#run-rasterio.fill.fillnodata">Run <code>rasterio.fill.fillnodata</code></a></li>
+  <li><a href="#fill-april-and-may-with-spring-mosaic" id="toc-fill-april-and-may-with-spring-mosaic" class="nav-link" data-scroll-target="#fill-april-and-may-with-spring-mosaic">Fill April and May with spring mosaic</a></li>
+  <li><a href="#fill-october-with-autumn-mosaic" id="toc-fill-october-with-autumn-mosaic" class="nav-link" data-scroll-target="#fill-october-with-autumn-mosaic">Fill October with autumn mosaic</a></li>
+  <li><a href="#fill-august-with-mean-value-of-july-and-september" id="toc-fill-august-with-mean-value-of-july-and-september" class="nav-link" data-scroll-target="#fill-august-with-mean-value-of-july-and-september">Fill August with mean value of July and September</a></li>
+  </ul></li>
+  <li><a href="#collating-statistics-for-years" id="toc-collating-statistics-for-years" class="nav-link" data-scroll-target="#collating-statistics-for-years">Collating statistics for years</a>
+  <ul class="collapse">
+  <li><a href="#yearly-maximum" id="toc-yearly-maximum" class="nav-link" data-scroll-target="#yearly-maximum">Yearly maximum</a></li>
+  <li><a href="#yearly-minimum" id="toc-yearly-minimum" class="nav-link" data-scroll-target="#yearly-minimum">Yearly minimum</a></li>
+  <li><a href="#yearly-mean" id="toc-yearly-mean" class="nav-link" data-scroll-target="#yearly-mean">Yearly mean</a></li>
+  <li><a href="#yearly-median" id="toc-yearly-median" class="nav-link" data-scroll-target="#yearly-median">Yearly median</a></li>
+  <li><a href="#yearly-sum" id="toc-yearly-sum" class="nav-link" data-scroll-target="#yearly-sum">Yearly sum</a></li>
+  <li><a href="#yearly-amplitude" id="toc-yearly-amplitude" class="nav-link" data-scroll-target="#yearly-amplitude">Yearly amplitude</a></li>
+  </ul></li>
+  <li><a href="#post-processing" id="toc-post-processing" class="nav-link" data-scroll-target="#post-processing">Post-processing</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T11:23:45.773414Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T11:23:23.994943Z&quot;}" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext autoreload</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>autoreload <span class="dv">2</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> rasterio <span class="im">as</span> rio</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> owslib.wcs <span class="im">as</span> wcs</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> src.functions <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> shutil <span class="im">import</span> rmtree</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> rasterio.enums <span class="im">import</span> Resampling</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>This example shows how to process NDVI, get yearly cloud-free index mosaics and derive some stats from it. Functions needed for processing are defined in <code>src.functions</code>.</p>
+<section id="getting-example-data-from-wcs" class="level2">
+<h2 class="anchored" data-anchor-id="getting-example-data-from-wcs">Getting example data from WCS</h2>
+<p>First step is to get the raw data, which is available and described <a href="https://ckan.ymparisto.fi/dataset/sentinel-2-image-index-mosaics-s2ind-sentinel-2-kuvamosaiikit-s2ind">here</a>.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T11:23:45.781489Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T11:23:45.776949Z&quot;}" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ndindex <span class="op">=</span> <span class="st">'ndvi'</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>outpath <span class="op">=</span> <span class="st">'example_data'</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>ix_path <span class="op">=</span> Path(<span class="ss">f'</span><span class="sc">{</span>outpath<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>ndindex<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>os.makedirs(ix_path, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>datapath <span class="op">=</span> ix_path<span class="op">/</span><span class="st">'raw'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Georeferenced data can be downloaded from WCS, using <code>owslib.wcs</code>.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T11:23:48.009586Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T11:23:45.783572Z&quot;}" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>wcs_url <span class="op">=</span> <span class="st">'https://data.nsdc.fmi.fi/geoserver/wcs'</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>layer <span class="op">=</span> <span class="ss">f'PTA:s2m_</span><span class="sc">{</span>ndindex<span class="sc">}</span><span class="ss">'</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>years <span class="op">=</span> [<span class="dv">2016</span>,<span class="dv">2017</span>,<span class="dv">2018</span>,<span class="dv">2019</span>,<span class="dv">2020</span>,<span class="dv">2021</span>,<span class="dv">2022</span>]</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> y <span class="kw">in</span> years: os.makedirs(datapath<span class="op">/</span><span class="bu">str</span>(y), exist_ok<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>w <span class="op">=</span> wcs.WebCoverageService(wcs_url, version<span class="op">=</span><span class="st">'1.0.0'</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>c <span class="op">=</span> w[layer]</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> <span class="bu">sorted</span>(c.timepositions)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> [ts <span class="cf">for</span> ts <span class="kw">in</span> t <span class="cf">if</span> <span class="st">'15'</span> <span class="kw">not</span> <span class="kw">in</span> ts]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The example area is between Kuivaniemi and Ranua, southern Lapland.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:11:45.847123Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:11:45.824660Z&quot;}" data-execution_count="107">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>min_x <span class="op">=</span> <span class="dv">457325</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>min_y <span class="op">=</span> <span class="dv">7702545</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>size_x <span class="op">=</span> <span class="dv">3000</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>size_y <span class="op">=</span> <span class="dv">3000</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>bounds <span class="op">=</span> (min_x, min_y, min_x<span class="op">+</span><span class="dv">10</span><span class="op">*</span>size_x, min_y<span class="op">+</span><span class="dv">10</span><span class="op">*</span>size_y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><code>t</code> contains all timepositions that cover a full month. Get the data and save it on the disk.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:16:01.675820Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:11:47.786106Z&quot;}" data-execution_count="108">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ts <span class="kw">in</span> t:</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    outfn <span class="op">=</span> <span class="ss">f'</span><span class="sc">{</span>ts<span class="sc">.</span>split(<span class="st">"T"</span>)[<span class="dv">0</span>][:<span class="op">-</span><span class="dv">2</span>]<span class="sc">.</span>replace(<span class="st">"-"</span>,<span class="st">""</span>)<span class="sc">}</span><span class="ss">.tif'</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    img <span class="op">=</span> w.getCoverage(layer,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                crs<span class="op">=</span><span class="st">'EPSG:3067'</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>                bbox<span class="op">=</span>bounds, </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                WIDTH<span class="op">=</span>size_x,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                HEIGHT<span class="op">=</span>size_y,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                <span class="bu">format</span><span class="op">=</span><span class="st">'GeoTIFF'</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>                time<span class="op">=</span>[ts])</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    out <span class="op">=</span> <span class="bu">open</span>(datapath<span class="op">/</span>ts[:<span class="dv">4</span>]<span class="op">/</span>outfn, <span class="st">'wb'</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    out.write(img.read())</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    out.close()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:16:05.236425Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:16:01.678370Z&quot;}" data-execution_count="109">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>,<span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">12</span>,<span class="dv">8</span>), dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> axs.flatten(): a.axis(<span class="st">'off'</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, year <span class="kw">in</span> <span class="bu">zip</span>(axs.flatten(), years[:<span class="op">-</span><span class="dv">1</span>]):</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(datapath<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="ss">f'</span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">06.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    i <span class="op">=</span> a.imshow(im, cmap<span class="op">=</span><span class="st">'RdYlGn'</span>, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    a.set_title(<span class="ss">f'June </span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>fig.colorbar(i, ax<span class="op">=</span>axs.ravel().tolist())</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="Processing_flow_files/figure-html/cell-7-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="creating-gapless-mosaics" class="level1">
+<h1>Creating gapless mosaics</h1>
+<section id="making-base-mosaics-spring-and-autumn-and-all-non-growth-seasons" class="level2">
+<h2 class="anchored" data-anchor-id="making-base-mosaics-spring-and-autumn-and-all-non-growth-seasons">Making base mosaics spring and autumn, and all non-growth seasons</h2>
+<p>Seasonal base mosaics are used to fill gaps for April, May and October, as they are usually the most cloudy months. Base mosaics are constructed from the median values of April, May and October during the full observation period.</p>
+<p>First specify the timesteps for spring and autumn. Spring is April and May, autumn is mid-September to October.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:16:39.256986Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:16:39.215814Z&quot;}" data-code_folding="[]" data-execution_count="110">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>spring_tsteps <span class="op">=</span> <span class="bu">sorted</span>([t <span class="cf">for</span> t <span class="kw">in</span> c.timepositions <span class="cf">if</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                        <span class="bu">any</span>(mon <span class="kw">in</span> t <span class="cf">for</span> mon <span class="kw">in</span> (<span class="st">'04-30'</span>, <span class="st">'05-15'</span>, <span class="st">'05-31'</span>))])</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>autumn_tsteps <span class="op">=</span> <span class="bu">sorted</span>([t <span class="cf">for</span> t <span class="kw">in</span> c.timepositions <span class="cf">if</span> </span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>                        <span class="bu">any</span>(mon <span class="kw">in</span> t <span class="cf">for</span> mon <span class="kw">in</span> (<span class="st">'10-15'</span>, <span class="st">'10-31'</span>))])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Download the files from WCS.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:18:23.683884Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:16:40.001586Z&quot;}" data-execution_count="111">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>os.makedirs(ix_path<span class="op">/</span><span class="st">'basedata_spring'</span>, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ts <span class="kw">in</span> spring_tsteps:</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    outfn <span class="op">=</span> <span class="ss">f'</span><span class="sc">{</span>ts<span class="sc">.</span>split(<span class="st">"T"</span>)[<span class="dv">0</span>]<span class="sc">.</span>replace(<span class="st">"-"</span>,<span class="st">""</span>)<span class="sc">}</span><span class="ss">.tif'</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    img <span class="op">=</span> w.getCoverage(layer,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>                crs<span class="op">=</span><span class="st">'EPSG:3067'</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>                bbox<span class="op">=</span>bounds, </span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>                WIDTH<span class="op">=</span>size_x,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>                HEIGHT<span class="op">=</span>size_y,</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>               <span class="bu">format</span><span class="op">=</span><span class="st">'GeoTIFF'</span>,</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>                time<span class="op">=</span>[ts])</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    out <span class="op">=</span> <span class="bu">open</span>(ix_path<span class="op">/</span><span class="st">'basedata_spring'</span><span class="op">/</span>outfn, <span class="st">'wb'</span>)</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    out.write(img.read())</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    out.close()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Read files as masked arrays, get median and save as <code>base_spring.tif</code>.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:18:30.866321Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:18:23.685725Z&quot;}" data-execution_count="112">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>spring_files <span class="op">=</span> os.listdir(ix_path<span class="op">/</span><span class="st">'basedata_spring'</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>spring_vals <span class="op">=</span> []</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> f <span class="kw">in</span> spring_files:</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(ix_path<span class="op">/</span><span class="st">'basedata_spring'</span><span class="op">/</span>f) <span class="im">as</span> src:</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        spring_vals.append(src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>])</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>        prof <span class="op">=</span> src.profile</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>spring_vals <span class="op">=</span> np.ma.array(spring_vals)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>spring_base <span class="op">=</span> np.ma.median(spring_vals, axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> rio.<span class="bu">open</span>(ix_path<span class="op">/</span><span class="st">'base_spring.tif'</span>, <span class="st">'w'</span>, <span class="op">**</span>prof) <span class="im">as</span> dest:</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    dest.write(spring_base,<span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Remove the files not needed anymore.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:18:30.916615Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:18:30.867939Z&quot;}" data-execution_count="113">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>rmtree(ix_path<span class="op">/</span><span class="st">'basedata_spring'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Do the same for autumn.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:19:37.039563Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:18:30.919666Z&quot;}" data-execution_count="114">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>os.makedirs(ix_path<span class="op">/</span><span class="st">'basedata_autumn'</span>, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ts <span class="kw">in</span> autumn_tsteps:</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    outfn <span class="op">=</span> <span class="ss">f'</span><span class="sc">{</span>ts<span class="sc">.</span>split(<span class="st">"T"</span>)[<span class="dv">0</span>][:<span class="op">-</span><span class="dv">2</span>]<span class="sc">.</span>replace(<span class="st">"-"</span>,<span class="st">""</span>)<span class="sc">}</span><span class="ss">.tif'</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    img <span class="op">=</span> w.getCoverage(layer,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>                crs<span class="op">=</span><span class="st">'EPSG:3067'</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>                bbox<span class="op">=</span>bounds, </span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>                WIDTH<span class="op">=</span>size_x,</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>                HEIGHT<span class="op">=</span>size_y,</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>                <span class="bu">format</span><span class="op">=</span><span class="st">'GeoTIFF'</span>,</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>                time<span class="op">=</span>[ts])</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    out <span class="op">=</span> <span class="bu">open</span>(ix_path<span class="op">/</span><span class="st">'basedata_autumn'</span><span class="op">/</span>outfn, <span class="st">'wb'</span>)</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    out.write(img.read())</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>    out.close()</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>autumn_files <span class="op">=</span> os.listdir(ix_path<span class="op">/</span><span class="st">'basedata_autumn'</span>)</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>autumn_vals <span class="op">=</span> []</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> f <span class="kw">in</span> autumn_files:</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(ix_path<span class="op">/</span><span class="st">'basedata_autumn'</span><span class="op">/</span>f) <span class="im">as</span> src:</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>        autumn_vals.append(src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>])</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>        prof <span class="op">=</span> src.profile</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>autumn_vals <span class="op">=</span> np.ma.array(autumn_vals)</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>autumn_base <span class="op">=</span> np.ma.median(autumn_vals, axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> rio.<span class="bu">open</span>(ix_path<span class="op">/</span><span class="st">'base_autumn.tif'</span>, <span class="st">'w'</span>, <span class="op">**</span>prof) <span class="im">as</span> dest:</span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>    dest.write(autumn_base,<span class="dv">1</span>)</span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>rmtree(ix_path<span class="op">/</span><span class="st">'basedata_autumn'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Generate combined base mosaic, used to derive yearly amplitude.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:19:51.754023Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:19:37.041399Z&quot;}" data-execution_count="115">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>vals <span class="op">=</span> np.ma.array(np.ma.concatenate([spring_vals, autumn_vals]))</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> rio.<span class="bu">open</span>(ix_path<span class="op">/</span><span class="st">'base_all.tif'</span>, <span class="st">'w'</span>, <span class="op">**</span>prof) <span class="im">as</span> dest:</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    dest.write(np.ma.median(vals, axis<span class="op">=</span><span class="dv">0</span>), <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:19:54.390032Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:19:51.758375Z&quot;}" data-execution_count="116">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">1</span>,<span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">12</span>,<span class="dv">4</span>), dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> axs: a.axis(<span class="st">'off'</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> rio.<span class="bu">open</span>(ix_path<span class="op">/</span><span class="st">'base_spring.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>axs[<span class="dv">0</span>].imshow(im, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>axs[<span class="dv">0</span>].set_title(<span class="st">'Spring base'</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> rio.<span class="bu">open</span>(ix_path<span class="op">/</span><span class="st">'base_autumn.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>axs[<span class="dv">1</span>].imshow(im, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>axs[<span class="dv">1</span>].set_title(<span class="st">'Autumn base'</span>)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> rio.<span class="bu">open</span>(ix_path<span class="op">/</span><span class="st">'base_all.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>i <span class="op">=</span> axs[<span class="dv">2</span>].imshow(im, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>axs[<span class="dv">2</span>].set_title(<span class="st">'Combined base'</span>)</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>fig.colorbar(i, ax<span class="op">=</span>axs.ravel().tolist())</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="Processing_flow_files/figure-html/cell-14-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>Now that all data needed for further processing is ready, let’s start creating cloudless mosaics.</p>
+</section>
+<section id="fill-gaps-with-the-maximum-value-of-previous-two-years" class="level2">
+<h2 class="anchored" data-anchor-id="fill-gaps-with-the-maximum-value-of-previous-two-years">Fill gaps with the maximum value of previous two years</h2>
+<p>As this step needs two previous years of data, the earliest year that can be processed from Sentinel-2 data is 2018. Also, because at the time of writing there is not enough data to process 2022, it is also omitted.</p>
+<p>First step is to use <code>fill_prev_years</code> to fill gaps with the maximum value of previous two years.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:20:21.601561Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:20:17.826865Z&quot;}" data-execution_count="117">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>fillyears <span class="op">=</span> [<span class="dv">2018</span>,<span class="dv">2019</span>,<span class="dv">2020</span>,<span class="dv">2021</span>]</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>filled_path <span class="op">=</span> ix_path<span class="op">/</span><span class="ss">f'interp'</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>os.makedirs(filled_path, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>fill_prev_years(datapath, filled_path, fillyears)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>As an example, see how May images look at this point.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:20:24.495709Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:20:21.603344Z&quot;}" data-execution_count="118">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>,<span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">8</span>), dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> axs.flatten(): a.axis(<span class="st">'off'</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, year <span class="kw">in</span> <span class="bu">zip</span>(axs.flatten(), fillyears):</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(filled_path<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="ss">f'</span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">06.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>        im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    i <span class="op">=</span> a.imshow(im, cmap<span class="op">=</span><span class="st">'RdYlGn'</span>, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    a.set_title(<span class="ss">f'May </span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>fig.colorbar(i, ax<span class="op">=</span>axs.ravel().tolist())</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="Processing_flow_files/figure-html/cell-16-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="run-rasterio.fill.fillnodata" class="level2">
+<h2 class="anchored" data-anchor-id="run-rasterio.fill.fillnodata">Run <code>rasterio.fill.fillnodata</code></h2>
+<p>Run <code>rasterio.fill.fillnodata</code> for the mosaics, in order to interpolate possible missing values. This usually doesn’t fill that much aside from small holes. <code>fill_nodata</code> runs <code>rasterio.fill.fillnodata</code> to all images.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:20:53.870422Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:20:24.498322Z&quot;}" data-execution_count="119">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>fill_nodata(filled_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:20:56.983393Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:20:53.873593Z&quot;}" data-execution_count="120">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>,<span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">8</span>), dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> axs.flatten(): a.axis(<span class="st">'off'</span>)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, year <span class="kw">in</span> <span class="bu">zip</span>(axs.flatten(), fillyears):</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(filled_path<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="ss">f'</span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">05.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>        im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    i <span class="op">=</span> a.imshow(im, cmap<span class="op">=</span><span class="st">'RdYlGn'</span>, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    a.set_title(<span class="ss">f'May </span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>fig.colorbar(i, ax<span class="op">=</span>axs.ravel().tolist())</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="Processing_flow_files/figure-html/cell-18-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="fill-april-and-may-with-spring-mosaic" class="level2">
+<h2 class="anchored" data-anchor-id="fill-april-and-may-with-spring-mosaic">Fill April and May with spring mosaic</h2>
+<p>Use base mosaic to fill missing data with <code>fill_base</code>. Pictures below show the difference before and after filling.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:21:12.654490Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:20:56.985614Z&quot;}" data-execution_count="121">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>,<span class="dv">4</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">4</span>), dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> axs.flatten(): a.axis(<span class="st">'off'</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, year <span class="kw">in</span> <span class="bu">zip</span>(<span class="bu">range</span>(<span class="dv">4</span>), fillyears):</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(filled_path<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="ss">f'</span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">04.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>        im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    axim <span class="op">=</span> axs[<span class="dv">0</span>,i].imshow(im, cmap<span class="op">=</span><span class="st">'RdYlGn'</span>, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    axs[<span class="dv">0</span>,i].set_title(<span class="ss">f'April </span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>fill_base(filled_path, ix_path<span class="op">/</span><span class="st">'base_spring.tif'</span>)</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, year <span class="kw">in</span> <span class="bu">zip</span>(<span class="bu">range</span>(<span class="dv">4</span>), fillyears):</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(filled_path<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="ss">f'</span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">04.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>        im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>    axim <span class="op">=</span> axs[<span class="dv">1</span>,i].imshow(im, cmap<span class="op">=</span><span class="st">'RdYlGn'</span>, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>    axs[<span class="dv">1</span>,i].set_title(<span class="st">'Base-filled'</span>)</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>fig.colorbar(axim, ax<span class="op">=</span>axs.ravel().tolist())</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="Processing_flow_files/figure-html/cell-19-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="fill-october-with-autumn-mosaic" class="level2">
+<h2 class="anchored" data-anchor-id="fill-october-with-autumn-mosaic">Fill October with autumn mosaic</h2>
+<p>Same thing as before, but for October.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:21:28.638814Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:21:12.656316Z&quot;}" data-execution_count="122">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>,<span class="dv">4</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">4</span>), dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> axs.flatten(): a.axis(<span class="st">'off'</span>)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, year <span class="kw">in</span> <span class="bu">zip</span>(<span class="bu">range</span>(<span class="dv">4</span>), fillyears):</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(filled_path<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="ss">f'</span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">10.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>        im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    axim <span class="op">=</span> axs[<span class="dv">0</span>,i].imshow(im, cmap<span class="op">=</span><span class="st">'RdYlGn'</span>, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    axs[<span class="dv">0</span>,i].set_title(<span class="ss">f'October </span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>fill_base(filled_path, ix_path<span class="op">/</span><span class="st">'base_autumn.tif'</span>)</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, year <span class="kw">in</span> <span class="bu">zip</span>(<span class="bu">range</span>(<span class="dv">4</span>), fillyears):</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(filled_path<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="ss">f'</span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">10.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>        im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>    axim <span class="op">=</span> axs[<span class="dv">1</span>,i].imshow(im, cmap<span class="op">=</span><span class="st">'RdYlGn'</span>, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>    axs[<span class="dv">1</span>,i].set_title(<span class="ss">f'Base-filled'</span>)</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>fig.colorbar(axim, ax<span class="op">=</span>axs.ravel().tolist())</span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="Processing_flow_files/figure-html/cell-20-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="fill-august-with-mean-value-of-july-and-september" class="level2">
+<h2 class="anchored" data-anchor-id="fill-august-with-mean-value-of-july-and-september">Fill August with mean value of July and September</h2>
+<p>There are some areas where August has gaps, and they are filled with <code>fill_august</code>.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:21:35.456224Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:21:28.640533Z&quot;}" data-execution_count="123">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>,<span class="dv">4</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">4</span>), dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> axs.flatten(): a.axis(<span class="st">'off'</span>)</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, year <span class="kw">in</span> <span class="bu">zip</span>(<span class="bu">range</span>(<span class="dv">4</span>), fillyears):</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(filled_path<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="ss">f'</span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">08.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>        im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    axim <span class="op">=</span> axs[<span class="dv">0</span>,i].imshow(im, cmap<span class="op">=</span><span class="st">'RdYlGn'</span>, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    axs[<span class="dv">0</span>,i].set_title(<span class="ss">f'August </span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>fill_august(filled_path)</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, year <span class="kw">in</span> <span class="bu">zip</span>(<span class="bu">range</span>(<span class="dv">4</span>), fillyears):</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(filled_path<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="ss">f'</span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">08.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>        im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>    axim <span class="op">=</span> axs[<span class="dv">1</span>,i].imshow(im, cmap<span class="op">=</span><span class="st">'RdYlGn'</span>, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>    axs[<span class="dv">1</span>,i].set_title(<span class="ss">f'Adjacent-filled'</span>)</span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>fig.colorbar(axim, ax<span class="op">=</span>axs.ravel().tolist())</span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="Processing_flow_files/figure-html/cell-21-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="collating-statistics-for-years" class="level1">
+<h1>Collating statistics for years</h1>
+<p>After getting all the gapless data ready, running <code>make_stats</code> creates the yearly statistics for NDVI.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:21:58.706283Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:21:35.457902Z&quot;}" data-execution_count="124">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>statspath <span class="op">=</span> ix_path<span class="op">/</span><span class="st">'stats'</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>os.makedirs(statspath, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>make_stats(filled_path, statspath, ix_path<span class="op">/</span><span class="st">'base_all.tif'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="yearly-maximum" class="level2">
+<h2 class="anchored" data-anchor-id="yearly-maximum">Yearly maximum</h2>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:22:01.750296Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:21:58.708912Z&quot;}" data-execution_count="125">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>,<span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">8</span>), dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> axs.flatten(): a.axis(<span class="st">'off'</span>)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, year <span class="kw">in</span> <span class="bu">zip</span>(axs.flatten(), fillyears):</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(statspath<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="ss">f'max.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>        im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    i <span class="op">=</span> a.imshow(im, cmap<span class="op">=</span><span class="st">'RdYlGn'</span>, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>    a.set_title(<span class="ss">f'NDVI max </span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>fig.colorbar(i, ax<span class="op">=</span>axs.ravel().tolist())</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="Processing_flow_files/figure-html/cell-23-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="yearly-minimum" class="level2">
+<h2 class="anchored" data-anchor-id="yearly-minimum">Yearly minimum</h2>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:22:04.469903Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:22:01.753869Z&quot;}" data-execution_count="126">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>,<span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">8</span>), dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> axs.flatten(): a.axis(<span class="st">'off'</span>)</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, year <span class="kw">in</span> <span class="bu">zip</span>(axs.flatten(), fillyears):</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(statspath<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="ss">f'min.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>        im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    i <span class="op">=</span> a.imshow(im, cmap<span class="op">=</span><span class="st">'RdYlGn'</span>, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    a.set_title(<span class="ss">f'NDVI min </span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>fig.colorbar(i, ax<span class="op">=</span>axs.ravel().tolist())</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="Processing_flow_files/figure-html/cell-24-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="yearly-mean" class="level2">
+<h2 class="anchored" data-anchor-id="yearly-mean">Yearly mean</h2>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:22:07.275212Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:22:04.472109Z&quot;}" data-execution_count="127">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>,<span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">8</span>), dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> axs.flatten(): a.axis(<span class="st">'off'</span>)</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, year <span class="kw">in</span> <span class="bu">zip</span>(axs.flatten(), fillyears):</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(statspath<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="ss">f'mean.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>        im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    i <span class="op">=</span> a.imshow(im, cmap<span class="op">=</span><span class="st">'RdYlGn'</span>, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    a.set_title(<span class="ss">f'NDVI mean </span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>fig.colorbar(i, ax<span class="op">=</span>axs.ravel().tolist())</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="Processing_flow_files/figure-html/cell-25-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="yearly-median" class="level2">
+<h2 class="anchored" data-anchor-id="yearly-median">Yearly median</h2>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:22:10.644525Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:22:07.277538Z&quot;}" data-execution_count="128">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>,<span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">8</span>), dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> axs.flatten(): a.axis(<span class="st">'off'</span>)</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, year <span class="kw">in</span> <span class="bu">zip</span>(axs.flatten(), fillyears):</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(statspath<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="ss">f'median.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>        im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    i <span class="op">=</span> a.imshow(im, cmap<span class="op">=</span><span class="st">'RdYlGn'</span>, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>    a.set_title(<span class="ss">f'NDVI median </span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>fig.colorbar(i, ax<span class="op">=</span>axs.ravel().tolist())</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="Processing_flow_files/figure-html/cell-26-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="yearly-sum" class="level2">
+<h2 class="anchored" data-anchor-id="yearly-sum">Yearly sum</h2>
+<p>Sum can be used as a proxy for productivity for the areas, especially for fields etc.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:22:14.653901Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:22:10.647203Z&quot;}" data-execution_count="129">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>,<span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">8</span>), dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> axs.flatten(): a.axis(<span class="st">'off'</span>)</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, year <span class="kw">in</span> <span class="bu">zip</span>(axs.flatten(), fillyears):</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(statspath<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="ss">f'sum.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>        im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>    i <span class="op">=</span> a.imshow(im, cmap<span class="op">=</span><span class="st">'RdYlGn'</span>, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">1400</span>)</span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>    a.set_title(<span class="ss">f'NDVI sum </span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>fig.colorbar(i, ax<span class="op">=</span>axs.ravel().tolist())</span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="Processing_flow_files/figure-html/cell-27-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="yearly-amplitude" class="level2">
+<h2 class="anchored" data-anchor-id="yearly-amplitude">Yearly amplitude</h2>
+<p>Amplitude is calculated as <span class="math inline">\(amp = max - base\_all\)</span>, and used for phenology applications.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:25:38.919027Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:25:35.907613Z&quot;}" data-execution_count="139">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>,<span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">8</span>), dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> axs.flatten(): a.axis(<span class="st">'off'</span>)</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, year <span class="kw">in</span> <span class="bu">zip</span>(axs.flatten(), fillyears):</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(statspath<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="ss">f'amp.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>        im <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">False</span>)[<span class="dv">0</span>]</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>    i <span class="op">=</span> a.imshow(im, cmap<span class="op">=</span><span class="st">'RdYlGn'</span>, vmin<span class="op">=-</span><span class="dv">10</span>, vmax<span class="op">=</span><span class="dv">100</span>)</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>    a.set_title(<span class="ss">f'NDVI amplitude </span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>fig.colorbar(i, ax<span class="op">=</span>axs.ravel().tolist())</span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="Processing_flow_files/figure-html/cell-28-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>Comparison with previous amplitude formula <span class="math inline">\(max - median\)</span>.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:25:35.904822Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:25:33.170684Z&quot;}" data-execution_count="138">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(<span class="dv">2</span>,<span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>,<span class="dv">8</span>), dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> axs.flatten(): a.axis(<span class="st">'off'</span>)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, year <span class="kw">in</span> <span class="bu">zip</span>(axs.flatten(), fillyears):</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(statspath<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="st">'max.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>        maxvals <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> rio.<span class="bu">open</span>(statspath<span class="op">/</span><span class="bu">str</span>(year)<span class="op">/</span><span class="st">'median.tif'</span>) <span class="im">as</span> src:</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>        medians <span class="op">=</span> src.read(masked<span class="op">=</span><span class="va">True</span>)[<span class="dv">0</span>]</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>    amp <span class="op">=</span> (maxvals <span class="op">-</span> medians)</span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>    i <span class="op">=</span> a.imshow(amp, cmap<span class="op">=</span><span class="st">'RdYlGn'</span>, vmin<span class="op">=-</span><span class="dv">10</span>, vmax<span class="op">=</span><span class="dv">100</span>)</span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>    a.set_title(<span class="ss">f'NDVI amplitude </span><span class="sc">{</span>year<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>fig.colorbar(i, ax<span class="op">=</span>axs.ravel().tolist())</span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="Processing_flow_files/figure-html/cell-29-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="post-processing" class="level1">
+<h1>Post-processing</h1>
+<p>As a post-processing step, the mosaics are clipped with the borders of Finland, and overviews are built for faster rendering. This are doesn’t need to be clipped but let’s build overviews. <code>src.functions.clip_rasters</code> can be used to clip data with some polygon.</p>
+<div class="cell" data-executetime="{&quot;end_time&quot;:&quot;2022-10-31T14:28:20.808990Z&quot;,&quot;start_time&quot;:&quot;2022-10-31T14:28:19.307754Z&quot;}" data-execution_count="140">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>base_fns <span class="op">=</span> [ix_path<span class="op">/</span><span class="st">'base_spring.tif'</span>, ix_path<span class="op">/</span><span class="st">'base_autumn.tif'</span>] </span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>stats_fns <span class="op">=</span> [statspath<span class="op">/</span>year<span class="op">/</span>f <span class="cf">for</span> year <span class="kw">in</span> os.listdir(statspath) <span class="cf">for</span> f <span class="kw">in</span> os.listdir(statspath<span class="op">/</span>year)]</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>interp_fns <span class="op">=</span> [filled_path<span class="op">/</span>year<span class="op">/</span>f <span class="cf">for</span> year <span class="kw">in</span> os.listdir(filled_path) <span class="cf">for</span> f <span class="kw">in</span> os.listdir(filled_path<span class="op">/</span>year)]</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>factors <span class="op">=</span> [<span class="dv">2</span><span class="op">**</span>(n<span class="op">+</span><span class="dv">1</span>) <span class="cf">for</span> n <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">4</span>)] <span class="co"># Images are so small that this is enough</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> f <span class="kw">in</span> base_fns <span class="op">+</span> stats_fns <span class="op">+</span> interp_fns:</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>    dst <span class="op">=</span> rio.<span class="bu">open</span>(f, <span class="st">'r+'</span>)</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>    dst.build_overviews(factors, Resampling.nearest)</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>    dst.update_tags(ns<span class="op">=</span><span class="st">'rio_overview'</span>, resampling<span class="op">=</span><span class="st">'nearest'</span>)</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>    dst.close()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

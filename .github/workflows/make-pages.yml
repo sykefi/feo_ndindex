@@ -17,6 +17,27 @@ jobs:
         with:
           tinytex: false
 
+      - name: Generate README.md
+        run: quarto render README.ipynb
+
+      - name: switch from HTTPS to SSH
+        run: git remote set-url origin ${{ secrets.ssh }}
+
+      - name: check for changes
+        run: git status
+
+      - name: stage README.md
+        run: git add README.md
+      
+      - name: commit README.md
+        run: git commit -m 'Auto-updating README.md'
+
+      - name: fetch from main
+        run: git fetch origin main
+
+      - name: push to main
+        run: git push origin HEAD:main
+
       - name: create docs
         run: quarto render --output-dir _docs
 

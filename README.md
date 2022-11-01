@@ -11,7 +11,8 @@ produced:
 - Yearly minimum value
 - Yearly mean
 - Yearly median
-- Yearly amplitude (pixelwise maximum - pixelwise median)
+- Yearly amplitude (pixelwise maximum - median of April, May and October
+  for the full time period)
 - Yearly sum
 - Monthly mosaics for April, May, June, July, August, September and
   October

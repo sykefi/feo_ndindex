@@ -164,12 +164,12 @@ def process_patch(outpath:Path, years:list, files:list, ndindex:str, x:int, y:in
     with rio.open(base_datapath/f'base_all_{x}_{y}.tif', 'w', **prof) as dest:
         dest.write(base, 1)
 
-    spring_vals = None
-    autumn_vals = None
-    vals = None
-    autumn_base = None
-    spring_base = None
-    base = None
+    del spring_vals 
+    del autumn_vals 
+    del vals 
+    del autumn_base  
+    del spring_base
+    del base
 
     logging.info(f'Filling nodata values for {x}_{y}')
 

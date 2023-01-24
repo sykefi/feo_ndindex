@@ -53,7 +53,7 @@ def fill_nodata(datapath:Path) -> None:
                 arr_filled = fillnodata(arr, mask=src.read_masks(1), 
                                         max_search_distance=100, smoothing_iterations=3)
         with rio.open(datapath/f/mos, 'w', **prof) as dest:
-            dest.write_band(1, arr_filled)
+            dest.write_band(1, np.clip(arr_filled,0,200)) # Sometimes fillnodata fills in values that are too large
     return
 
 def fill_base(datapath:Path, base_mosaic:str) -> None:

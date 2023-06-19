@@ -17,6 +17,5 @@ website:
 
 format:
   html:
-    theme: minty
-    css: styles.css
+    theme: syke.scss
     toc: true

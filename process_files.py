@@ -45,14 +45,14 @@ def get_script_path():
 
 def rio_merge_files(files_to_mosaic, outpath):
     "Merge files, used with multiprocessing.Pool"
-    logging.info(f'Creating file {outpath.stem}')
+    logging.info(f'Creating file {outpath.parts[-2]}/{outpath.stem}')
     rio_merge.merge(files_to_mosaic, dst_path=outpath,
                     dst_kwds={'compress':'lzw', 'predictor':2, 'BIGTIFF':'YES'})
     return
 
 def patch_build_overviews(fname):
     "Build overviews to mosaics, used with multiprocessing.Pool"
-    logging.info(f'Building overviews for {fname.stem}')
+    logging.info(f'Building overviews for {fname.parts[-2]}/{fname.stem}')
     factors = [2**(n+1) for n in range(9)]
     dst = rio.open(fname, 'r+')
     dst.build_overviews(factors, Resampling.nearest)
@@ -60,7 +60,7 @@ def patch_build_overviews(fname):
     dst.close()
     return 
 
-def process_patch(outpath:Path, years:list, files:list, ndindex:str, x:int, y:int) -> None:
+def process_patch(outpath:Path, years:list, files:list, ndindex:str, x:int, y:int, dx:int, dy:int) -> None:
     """
     Process 10000x9900 patches and compute stats from them. By default, products for 
     2018, 2019, 2020 and 2021 are produced, using data from 2016 to 2021
@@ -80,12 +80,12 @@ def process_patch(outpath:Path, years:list, files:list, ndindex:str, x:int, y:in
     logging.info(f'Starting with raster {x}_{y}')
     ix_path = outpath/ndindex
     base_datapath = ix_path/'base_mosaics'
-    datapath = ix_path/f'testdata_{x}_{y}'
+    datapath = ix_path/f'tempdata_{x}_{y}'
     os.makedirs(datapath, exist_ok=True)
     borders = gpd.read_file(f'{get_script_path()}/aux_data/fin_borders.shp')
 
     for year in years: os.makedirs(datapath/str(year), exist_ok=True)
-    window = rio_windows.Window.from_slices((y, y+10000), (x, x+9900))
+    window = rio_windows.Window.from_slices((y, y+dy), (x, x+dx))
     for f in files:
         year = str(f).split(f'{ndindex}_')[1][:4]
         with rio.open(f) as src:
@@ -95,7 +95,8 @@ def process_patch(outpath:Path, years:list, files:list, ndindex:str, x:int, y:in
                 width=window.width,
                 transform= rio_windows.transform(window, src.transform),
                 compress='lzw',
-                predictor=2
+                predictor=2,
+                BIGTIFF='YES'
             )
             # If window is not within Finnish borders, no need to process it
             bbox = box(prof['transform'][2],
@@ -113,17 +114,17 @@ def process_patch(outpath:Path, years:list, files:list, ndindex:str, x:int, y:in
             if ndindex == 'ndbi': # For ndbi 0 can be either nodata or valid value so we need nodatamask from metadata
                 with rio.open(str(f).replace('ndbi', 'meta').replace('NDBI', 'META')) as meta:
                     meta_mask = meta.read(window=window, masked=True)[0]
-                with rio.open(datapath/year/f.name, 'r+') as src:
+                with rio.open(datapath/year/f.name, 'r+', **prof) as src:
                     src.nodata = 255
                     vals = src.read()[0]
                     vals[meta_mask.mask] = 255
                     src.write(vals,1)
-                
+
+    logging.info(f'Creating base mosaics for {x}_{y}')
     spring_files = sorted([t for t in files if 
                            any(mon in str(t) for mon in ('0430', '0515', '0531'))])
     autumn_files = sorted([t for t in files if 
                            any(mon in str(t) for mon in ('1015', '1031'))])
-
     spring_vals = []
     for f in spring_files:
         with rio.open(f) as src:
@@ -138,7 +139,8 @@ def process_patch(outpath:Path, years:list, files:list, ndindex:str, x:int, y:in
                 prof['nodata'] = 255
 
     spring_vals = np.ma.array(spring_vals)
-    spring_base = np.ma.median(spring_vals, axis=0)
+    spring_base = np.zeros((dy,dx), dtype=np.uint8)
+    _ = np.ma.median(spring_vals, axis=0, out=spring_base)
     with rio.open(base_datapath/f'base_spring_{x}_{y}.tif', 'w', **prof) as dest:
         dest.write(spring_base, 1)
 
@@ -155,12 +157,14 @@ def process_patch(outpath:Path, years:list, files:list, ndindex:str, x:int, y:in
                 autumn_vals.append(np.ma.array(src.read(window=window)[0], mask=meta_mask.mask))
 
     autumn_vals = np.ma.array(autumn_vals)
-    autumn_base = np.ma.median(autumn_vals, axis=0)
+    autumn_base = np.zeros((dy,dx), dtype=np.uint8)
+    _ = np.ma.median(autumn_vals, axis=0, out=autumn_base)
     with rio.open(base_datapath/f'base_autumn_{x}_{y}.tif', 'w', **prof) as dest:
         dest.write(autumn_base, 1)
 
     vals = np.ma.concatenate([spring_vals, autumn_vals], 0)
-    base = np.ma.median(vals, axis=0)
+    base = np.zeros((dy,dx), dtype=np.uint8)
+    _ = np.ma.median(vals, axis=0, out=base)
     with rio.open(base_datapath/f'base_all_{x}_{y}.tif', 'w', **prof) as dest:
         dest.write(base, 1)
 
@@ -179,7 +183,8 @@ def process_patch(outpath:Path, years:list, files:list, ndindex:str, x:int, y:in
         2018,
         2019,
         2020,
-        2021
+        2021,
+        2022
     ]
 
     fill_prev_years(datapath, filled_path, fillyears)
@@ -198,25 +203,25 @@ def process_patch(outpath:Path, years:list, files:list, ndindex:str, x:int, y:in
         logging.info(f'Clipping rasters {x}_{y}')
         clip_rasters(filled_path, borders, fillyears)
         clip_rasters(statspath, borders, fillyears)
-        clip_raster(base_datapath/f'base_spring_{x}_{y}.tif')
-        clip_raster(base_datapath/f'base_autumn_{x}_{y}.tif')
-        clip_raster(base_datapath/f'base_all_{x}_{y}.tif')
+        clip_raster(base_datapath/f'base_spring_{x}_{y}.tif', borders)
+        clip_raster(base_datapath/f'base_autumn_{x}_{y}.tif', borders)
+        clip_raster(base_datapath/f'base_all_{x}_{y}.tif', borders)
     logging.info(f'Finished with raster {x}_{y}')
     return
 
 
 @call_parse
 def main(ndindex:Param("""Normalized difference index to use, 
-                       must be one of ndvi, ndmi, ndbi, ndbi or ndsi.
+                       must be one of ndvi, ndmi, ndti, ndbi or ndsi.
                        Default ndvi""", str, default='ndvi',
-                       choices=['ndvi', 'ndmi', 'ndbi', 'ndbi', 'ndsi']),
+                       choices=['ndvi', 'ndmi', 'ndbi', 'ndti', 'ndsi']),
          outpath:Param('Path to save generated data to. default "."',
                        str, default='.'),
          inpath:Param('Path that contains all the required files', str)):
 
     inpath = Path(inpath)
     outpath = Path(outpath)
-    years = [2016, 2017,2018,2019,2020,2021]
+    years = [2016, 2017,2018,2019,2020,2021,2022]
     files = []
     for year in years:
         files.extend([inpath/f'{year}/{ndindex.upper()}/{f}'
@@ -227,11 +232,12 @@ def main(ndindex:Param("""Normalized difference index to use,
     ix_path = outpath/ndindex
     base_datapath = ix_path/'base_mosaics'
     os.makedirs(base_datapath, exist_ok=True)
+    dy = 10000
+    dx = 9900
+    inputs = [(outpath, years, files, ndindex, x, y, dx, dy) for x, y in 
+               product(range(0, 79200, dx), range(0,120000,dy))]
 
-    inputs = [(outpath, years, files, ndindex, x, y) for x, y in 
-               product(range(0, 79200, 9900), range(0,120000,10000))]
-
-    with multiprocessing.Pool(5) as pool:
+    with multiprocessing.Pool(8) as pool:
         pool.starmap(process_patch, inputs)
 
     
@@ -246,7 +252,6 @@ def main(ndindex:Param("""Normalized difference index to use,
     autumn_bases = [base_datapath/f for f in os.listdir(base_datapath) if 'autumn' in f]
     all_bases = [base_datapath/f for f in os.listdir(base_datapath) if 'all' in f]
 
-
     with multiprocessing.Pool(3) as pool:
         pool.starmap(rio_merge_files, [(spring_bases, ix_path/'base_spring.tif'),
                                        (autumn_bases, ix_path/'base_autumn.tif'),
@@ -258,7 +263,8 @@ def main(ndindex:Param("""Normalized difference index to use,
         2018,
         2019,
         2020,
-        2021
+        2021,
+        2022
         ]
 
     merge_inps = []
@@ -271,7 +277,7 @@ def main(ndindex:Param("""Normalized difference index to use,
         merge_inps.extend([([ix_path/fol/str(year)/f for fol in interp_folders], final_interp/str(year)/f) 
                              for f in os.listdir(ix_path/interp_folders[0]/str(year))])
 
-    with multiprocessing.Pool(8) as pool:
+    with multiprocessing.Pool(5) as pool:
         pool.starmap(rio_merge_files, merge_inps)
     
     for f in interp_folders: rmtree(ix_path/f)
@@ -284,6 +290,6 @@ def main(ndindex:Param("""Normalized difference index to use,
     interp_fns = [final_interp/year/f for year in os.listdir(final_interp) for f in os.listdir(final_interp/year)]
 
     overview_inps = base_fns + stats_fns + interp_fns
-    with multiprocessing.Pool(8) as pool:
+    with multiprocessing.Pool(5) as pool:
         pool.map(patch_build_overviews, overview_inps)
     logging.info('Finished')

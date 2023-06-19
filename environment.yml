@@ -2,7 +2,7 @@ name: feo-index
 channels:
   - conda-forge
 dependencies:
-  - python<3.10
+  - python
   - fastai::fastcore
   - conda-forge::rasterio
   - conda-forge::owslib

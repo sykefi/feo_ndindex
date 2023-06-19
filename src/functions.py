@@ -102,14 +102,12 @@ def make_amplitude(mosaics:np.ndarray, basepath:Path) -> np.ndarray:
 def make_stats(datapath:Path, outpath:Path, base_mos:Path) -> None:
     """
     Generate yearly stats for the mosaic. The generated stats are
-
     * Yearly mean, datatype uint8
     * Yearly median, datatype uint8
     * Yearly min, datatype uint8
     * Yearly max, datatype uint8
     * Yearly sum, datatype uint16
     * Amplitude (pixelwise max - base), datatype uint8
-
     """
     os.makedirs(outpath, exist_ok=True)
     for f in os.listdir(datapath): 
@@ -159,5 +157,5 @@ def clip_raster(datapath:Path, borders:gpd.GeoDataFrame) -> None:
 def clip_rasters(datapath:Path, borders:gpd.GeoDataFrame, fillyears:list) -> None:
     for year in fillyears:
         for f in os.listdir(datapath/str(year)):
-            clip_raster(datapath/str(year)/f)
+            clip_raster(datapath/str(year)/f, borders)
     return

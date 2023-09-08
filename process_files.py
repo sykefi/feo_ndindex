@@ -70,12 +70,11 @@ def process_patch(outpath:Path, years:list, files:list, ndindex:str, x:int, y:in
     3. Construct basemosaics for spring (April-May) and autumn (mid-September - October). Basemosaics
        contain the pixelwise median values from the full data availability period
     4. Fill all nodata with the maximum value for the same month and pixel from two previous years
-    5. Run rasterio.fill.fillnodata with maximum search distance of 100 and three iterations
-    6. Fill all remaining nodata for April and May mosaics with spring basemosaic
-    7. Fill all remaining nodata for October with autumn basemosaic
-    8. Fill all remaining nodata for August with the mean value of July and September of the same year
-    9. Collate yearly statistics
-    10. Clip products to Finnish borders, if necessary.
+    5. Fill all remaining nodata for April and May mosaics with spring basemosaic
+    6. Fill all remaining nodata for October with autumn basemosaic
+    7. Fill all remaining nodata for May-September with the mean value of the adjacent months of the same year
+    8. Collate yearly statistics
+    9. Clip products to Finnish borders, if necessary.
     """
     logging.info(f'Starting with raster {x}_{y}')
     ix_path = outpath/ndindex
@@ -188,13 +187,11 @@ def process_patch(outpath:Path, years:list, files:list, ndindex:str, x:int, y:in
     ]
 
     fill_prev_years(datapath, filled_path, fillyears)
-    if ndindex != 'ndbi':
-        fill_nodata(filled_path)
     fill_base(filled_path, base_datapath/f'base_spring_{x}_{y}.tif')
     fill_base(filled_path, base_datapath/f'base_autumn_{x}_{y}.tif')
     rmtree(datapath)
-    fill_august(filled_path)
-
+    for m in range(5, 10):
+        fill_adjacent_months(filled_path, m)
     logging.info(f'Creating statistics rasters {x}_{y}')
     statspath = ix_path/f'stats_{x}_{y}'
     make_stats(filled_path, statspath, base_datapath/f'base_all_{x}_{y}.tif')

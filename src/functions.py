@@ -1,18 +1,30 @@
 import rasterio as rio
-from rasterio.fill import fillnodata
 from pathlib import Path
 import numpy as np
 import os
 import geopandas as gpd
 import rasterio.mask as rio_mask
 import geopandas as gpd
+from .numpy_utils import * 
 
 """
 Functions that fill gaps in ndindex mosaics and collate stats from them
 """
 
-__all__ = ['fill_prev_years', 'fill_nodata', 'fill_base', 
-           'fill_august', 'make_stats', 'clip_rasters', 'clip_raster']
+__all__ = ['generate_base', 'fill_prev_years','fill_base', 
+           'fill_adjacent_months', 'make_stats', 'clip_rasters', 'clip_raster']
+
+def generate_base(datapath:Path, quantile:int=10) -> np.ndarray:
+    """Generate base value mosaic, where base is `quantile` of the full study period"""
+    mosaics = []
+    years = os.listdir(datapath)
+    for y in years:
+        for mos in [m for m in os.listdir(datapath/y) if m.endswith('tif')]:
+            with rio.open(datapath/y/mos) as src:
+                mosaics.append(src.read()[0])
+    mosaics = np.array(mosaics).astype(np.float32)
+    mosaics[mosaics == 0] = np.nan
+    return nan_percentile(mosaics, quantile)[0]
 
 def fill_prev_years(datapath:Path, outpath:Path, fillyears:list) -> None:
     """Fill nodata values for as single month with maximum value of the same month
@@ -43,19 +55,6 @@ def fill_prev_years(datapath:Path, outpath:Path, fillyears:list) -> None:
                 dest.write(vals.data, 1)
     return
 
-def fill_nodata(datapath:Path) -> None:
-    """Run `rasterio.fill.fillnodata` to mosaic with search distance of 100 pixels, 3 iterations"""
-    for f in os.listdir(datapath): 
-        for mos in [m for m in os.listdir(datapath/str(f)) if m.endswith('tif')]:
-            with rio.open(datapath/f/mos) as src:
-                prof = src.profile
-                arr = src.read(1)
-                arr_filled = fillnodata(arr, mask=src.read_masks(1), 
-                                        max_search_distance=100, smoothing_iterations=3)
-        with rio.open(datapath/f/mos, 'w', **prof) as dest:
-            dest.write_band(1, np.clip(arr_filled,0,200)) # Sometimes fillnodata fills in values that are too large
-    return
-
 def fill_base(datapath:Path, base_mosaic:str) -> None:
     "Fill April, May and October mosaics with basedata mosaic"
     if 'spring' in str(base_mosaic): base_months = ['04','05']
@@ -63,7 +62,6 @@ def fill_base(datapath:Path, base_mosaic:str) -> None:
     else: 
         print('Faulty base mosaic, skipping')
         return
-
     for f in os.listdir(datapath):
         with rio.open(base_mosaic) as wm:
             wm_vals = wm.read()[0]
@@ -78,26 +76,23 @@ def fill_base(datapath:Path, base_mosaic:str) -> None:
                     dest.write_band(1, data.data)
     return
 
-def fill_august(datapath:Path) -> None:
-    """Fill August mosaic with the mean value of July and September of the same year"""
+def fill_adjacent_months(datapath:Path, month:int) -> None:
+    """Fill `month` mosaic with the mean value of previous and next month of the same year"""
     for f in os.listdir(datapath):
-        aug_file = [fname for fname in os.listdir(datapath/str(f)) if '08' in fname and fname.endswith('tif')][0]
-        with rio.open(datapath/str(f)/aug_file) as src:
+        cur_file = [fname for fname in os.listdir(datapath/str(f)) if f'{month:02d}' in fname and fname.endswith('tif')][0]
+        with rio.open(datapath/str(f)/cur_file) as src:
             prof = src.profile
-            aug = src.read(masked=True)[0]
-        jul_file = [fname for fname in os.listdir(datapath/str(f)) if '07' in fname and fname.endswith('tif')][0]
-        with rio.open(datapath/str(f)/jul_file) as src:
-            jul = src.read(masked=True)[0]
-        sep_file = [fname for fname in os.listdir(datapath/str(f)) if '09' in fname and fname.endswith('tif')][0]
-        with rio.open(datapath/str(f)/sep_file) as src:
-            sep = src.read(masked=True)[0]
-        aug.data[aug.mask] = np.ma.array([jul, sep]).mean(axis=0)[aug.mask]
-        with rio.open(datapath/str(f)/aug_file, 'w', **prof) as dest:
-            dest.write_band(1, aug.data)
+            cur = src.read(masked=True)[0]
+        prev_file = [fname for fname in os.listdir(datapath/str(f)) if f'{month-1:02d}' in fname and fname.endswith('tif')][0]
+        with rio.open(datapath/str(f)/prev_file) as src:
+            prev = src.read(masked=True)[0]
+        nxt_file = [fname for fname in os.listdir(datapath/str(f)) if f'{month+1:02d}' in fname and fname.endswith('tif')][0]
+        with rio.open(datapath/str(f)/nxt_file) as src:
+            nxt = src.read(masked=True)[0]
+        cur.data[cur.mask] = np.ma.array([prev, nxt]).mean(axis=0)[cur.mask]
+        with rio.open(datapath/str(f)/cur_file, 'w', **prof) as dest:
+            dest.write_band(1, cur.data)
     return
-
-def make_amplitude(mosaics:np.ndarray, basepath:Path) -> np.ndarray:
-    pass
 
 def make_stats(datapath:Path, outpath:Path, base_mos:Path) -> None:
     """
@@ -106,8 +101,9 @@ def make_stats(datapath:Path, outpath:Path, base_mos:Path) -> None:
     * Yearly median, datatype uint8
     * Yearly min, datatype uint8
     * Yearly max, datatype uint8
-    * Yearly sum, datatype uint16
-    * Amplitude (pixelwise max - base), datatype uint8
+    * Yearly sum, datatype int16
+    * Yearly quantiles: 10 and 25 so far, datatype uint8
+    * Amplitude (pixelwise max - yearly_25 quantile), datatype int16
     """
     os.makedirs(outpath, exist_ok=True)
     for f in os.listdir(datapath): 
@@ -127,14 +123,15 @@ def make_stats(datapath:Path, outpath:Path, base_mos:Path) -> None:
             dest.write(mosaics.min(axis=0),1)
         with rio.open(outpath/str(f)/'max.tif', 'w', **prof) as dest:
             dest.write(mosaics.max(axis=0),1)
+        quantiles = nan_percentile(mosaics, [10,25])
+        with rio.open(outpath/str(f)/'quantile_10.tif', 'w', **prof) as dest:
+            dest.write(quantiles[0], 1)
+        with rio.open(outpath/str(f)/'quantile_25.tif', 'w', **prof) as dest:
+            dest.write(quantiles[1], 1)
         prof.update({'dtype':'int16',
                      'nodata': -999})
         with rio.open(outpath/str(f)/'amp.tif', 'w', **prof) as dest:
-            with rio.open(base_mos) as src:
-                basevals = src.read()[0]
-            dest.write(mosaics.max(axis=0).astype(np.int16)-basevals.astype(np.int16), 1)
-        prof.update({'dtype':'uint16',
-                     'nodata': 65535})
+            dest.write(mosaics.max(axis=0).astype(np.int16)-quantiles[1].astype(np.int16), 1)
         mosaics = mosaics.astype(np.int16)
         with rio.open(outpath/str(f)/'sum.tif', 'w', **prof) as dest:
             dest.write(mosaics.sum(axis=0), 1)

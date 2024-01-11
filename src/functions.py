@@ -11,20 +11,9 @@ from .numpy_utils import *
 Functions that fill gaps in ndindex mosaics and collate stats from them
 """
 
-__all__ = ['generate_base', 'fill_prev_years','fill_base', 
-           'fill_adjacent_months', 'make_stats', 'clip_rasters', 'clip_raster']
+__all__ = ['fill_prev_years','fill_base', 'make_amplitude',
+           'fill_adjacent_months', 'make_stats', 'clip_raster']
 
-def generate_base(datapath:Path, quantile:int=10) -> np.ndarray:
-    """Generate base value mosaic, where base is `quantile` of the full study period"""
-    mosaics = []
-    years = os.listdir(datapath)
-    for y in years:
-        for mos in [m for m in os.listdir(datapath/y) if m.endswith('tif')]:
-            with rio.open(datapath/y/mos) as src:
-                mosaics.append(src.read()[0])
-    mosaics = np.array(mosaics).astype(np.float32)
-    mosaics[mosaics == 0] = np.nan
-    return nan_percentile(mosaics, quantile)[0]
 
 def fill_prev_years(datapath:Path, outpath:Path, fillyears:list) -> None:
     """Fill nodata values for as single month with maximum value of the same month
@@ -94,7 +83,23 @@ def fill_adjacent_months(datapath:Path, month:int) -> None:
             dest.write_band(1, cur.data)
     return
 
-def make_stats(datapath:Path, outpath:Path, base_mos:Path) -> None:
+def make_amplitude(datapath:Path, yearly_max:np.ndarray, year:int, backtrack:int=2) -> np.ndarray:
+    """
+    Make amplitude (max - 25-quantile from `year` and `backtrack` previous years)
+    """
+    years = [year - i for i in range(backtrack)]
+    mosaics = []
+    for y in years:
+        for mos in [datapath/str(y)/m for m in os.listdir(datapath/str(y)) 
+                    if m.endswith('tif')]:
+            with rio.open(mos) as src:
+                data = src.read(masked=True)[0]
+            mosaics.append(data)
+    mosaics = np.ma.array(mosaics)
+    q_25 = nan_percentile(mosaics, 25)[0]
+    return yearly_max.astype(np.int16) - q_25.astype(np.int16)
+
+def make_stats(datapath:Path, outpath:Path) -> None:
     """
     Generate yearly stats for the mosaic. The generated stats are
     * Yearly mean, datatype uint8
@@ -130,8 +135,10 @@ def make_stats(datapath:Path, outpath:Path, base_mos:Path) -> None:
             dest.write(quantiles[1], 1)
         prof.update({'dtype':'int16',
                      'nodata': -999})
-        with rio.open(outpath/str(f)/'amp.tif', 'w', **prof) as dest:
-            dest.write(mosaics.max(axis=0).astype(np.int16)-quantiles[1].astype(np.int16), 1)
+        del quantiles
+        if int(f) >= 2020: 
+            with rio.open(outpath/str(f)/'amp.tif', 'w', **prof) as dest:
+                dest.write(make_amplitude(datapath, mosaics.max(axis=0), int(f), 2), 1)
         mosaics = mosaics.astype(np.int16)
         with rio.open(outpath/str(f)/'sum.tif', 'w', **prof) as dest:
             dest.write(mosaics.sum(axis=0), 1)
@@ -151,8 +158,18 @@ def clip_raster(datapath:Path, borders:gpd.GeoDataFrame) -> None:
         dest.write(out_im)
     return
 
-def clip_rasters(datapath:Path, borders:gpd.GeoDataFrame, fillyears:list) -> None:
-    for year in fillyears:
-        for f in os.listdir(datapath/str(year)):
-            clip_raster(datapath/str(year)/f, borders)
+def mask_raster(datapath:Path, polys:gpd.GeoDataFrame) -> None:
+    with rio.open(datapath) as src:
+        out_im, out_transform = rio_mask.mask(src, polys.geometry,
+                                              invert=True)
+        prof = src.profile
+    prof.update(compress='lzw',
+                predictor=2,
+                BIGTIFF='YES',
+                height=out_im.shape[1],
+                width=out_im.shape[2],
+                transform=out_transform)
+    with rio.open(datapath, 'w', **prof) as dest:
+        dest.write(out_im)
     return
+

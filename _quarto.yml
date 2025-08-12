@@ -5,15 +5,15 @@ project:
     port: 3000
     browser: false
   render:
-    - Processing_flow.ipynb
+    - processing_flow_stac.ipynb
 
 website:
   title: "Gapless S2 index mosaics"
   navbar:
     background: primary
     left:
-      - href: Processing_flow.ipynb
-        text: Processing flow
+      - href: processing_flow_stac.ipynb
+        text: Processing flow with Paituli STAC
 
 format:
   html:
